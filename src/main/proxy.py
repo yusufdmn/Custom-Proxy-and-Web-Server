@@ -10,6 +10,7 @@ MAX_URI_SIZE = 9999
 
 def handle_client(client_connection, client_address):
     """Handles an individual client connection."""
+
     try:
         request = client_connection.recv(1024).decode()
         if not request:
@@ -20,18 +21,20 @@ def handle_client(client_connection, client_address):
         # Parse the request line
         lines = request.splitlines()
         request_line = lines[0]
+
         try:
             method, uri, version = request_line.split()
         except ValueError:
             send_error_response(client_connection, 400, "Bad Request")
             return
 
-        # Validate method
-#        if method != "GET":
- #           send_error_response(client_connection, 501, "Not Implemented")
-  #          return
 
         # Parse the URI
+
+        if method == "CONNECT":
+            send_error_response(client_connection, 405, "HTTPS Not Supported")
+            return
+
         if uri.startswith("http://"):
             uri_parts = uri.split("/", 3)
             if len(uri_parts) < 4:
@@ -40,7 +43,6 @@ def handle_client(client_connection, client_address):
                 path = "/" + uri_parts[3]
         else:
             path = uri
-
         # Validate URI length
         try:
             size = int(path.lstrip("/"))
@@ -59,23 +61,24 @@ def handle_client(client_connection, client_address):
         client_connection.close()
 
 
+
+
 def forward_request_to_server(client_connection, method, path, version, headers):
     """Forwards the request to the appropriate web server based on the Host header."""
     try:
         # Extract the Host from headers
         target_host, target_port = extract_host_and_port(headers)
-        print(f"Target host: {target_host}, Target port: {target_port}")
 
         # Create a socket to connect to the target web server
         with socket.create_connection((target_host, target_port)) as server_conn:
             # Prepare the request for the web server
-            print("Proxy-Server connection port: ", server_conn.getsockname()[1])
+            print("Proxy- WebServer connection port: ", server_conn.getsockname()[1])
             request_line = f"{method} {path} {version}\r\n"
             headers_with_host = "\r\n".join(headers) + "\r\n\r\n"
             header_proxy = f"X-Forwarded-By: Proxy Server: 127.0.0.1 {PROXY_PORT}\r\n"
             server_request = request_line + header_proxy + headers_with_host
 
-            print(f"\nForwarding request to {target_host}:{target_port}")
+            print(f"\nForwarding request to server: {target_host}:{target_port}")
             server_conn.sendall(server_request.encode())
 
             # Relay the response back to the client
@@ -91,6 +94,8 @@ def forward_request_to_server(client_connection, method, path, version, headers)
     except Exception as e:
         print(f"Error forwarding request to server: {e}")
         send_error_response(client_connection, 500, "Internal Server Error")
+
+
 
 
 def extract_host_and_port(headers):
