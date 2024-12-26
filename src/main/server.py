@@ -1,12 +1,10 @@
 import socket
 import threading
 
-# Constants for the valid range of the document size
 MIN_SIZE = 100
 MAX_SIZE = 20000
 
 def handle_client(connection, address):
-    """Handle an individual client connection."""
     try:
         request = connection.recv(1024).decode()
         print(f"\n\nRECIEVED REQUEST FROM {address}:\n\n{request}")
@@ -51,7 +49,6 @@ def handle_client(connection, address):
 
 
 def send_response(connection, status_code, status_message, content):
-    """Send an HTTP response to the client."""
     content_length = len(content)
     response_line = f"HTTP/1.1 {status_code} {status_message}\r\n"
     headers = (
@@ -64,7 +61,6 @@ def send_response(connection, status_code, status_message, content):
 
 
 def send_error_response(connection, status_code, status_message):
-    """Send an error response to the client."""
     response_line = f"HTTP/1.1 {status_code} {status_message}\r\n\r\n"
     headers = (
         f"{status_code}Error: {status_message}\r\n"
@@ -75,7 +71,6 @@ def send_error_response(connection, status_code, status_message):
 
 
 def generate_html_content(size):
-    """Generate an HTML document with the specified size."""
     head = f"<HTML>\n<HEAD>\n<TITLE>I am {size} bytes long</TITLE>\n</HEAD>\n"
     init_body = '<BODY> '
     end_tag = '</BODY>\n</HTML>'
@@ -90,7 +85,6 @@ def generate_html_content(size):
     return head + init_body + body + end_tag
 
 def start_server(port):
-    """Start the HTTP server."""
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(('0.0.0.0', port))
     server_socket.listen(5)
